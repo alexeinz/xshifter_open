@@ -115,13 +115,16 @@ jobs:
         run: ./macos/build.sh
       - name: Package Mac app
         run: |
-          mkdir -p dist
-          ditto -c -k --keepParent "macos/build/XShifter Open.app" "dist/XShifter-Open-${{ needs.version.outputs.version }}-macOS-universal.zip"
+          ./macos/package.sh
+          python3 scripts/package-docs.py
           lipo -info "macos/build/XShifter Open.app/Contents/MacOS/XShifterOpen"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: macos-app
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/*.dmg
+            dist/*.md
           if-no-files-found: error
 
   publish:
@@ -145,10 +148,10 @@ jobs:
         run: |
           set -euo pipefail
           cd dist
-          sha256sum ./*.apk ./*.zip > SHA256SUMS
+          sha256sum ./*.apk ./*.zip ./*.dmg ./*.md > SHA256SUMS
           EXTRA_FLAGS=()
           if [ "$PRERELEASE" = true ]; then EXTRA_FLAGS+=(--prerelease); fi
           gh release create "$RELEASE_TAG" --verify-tag --title "XShifter Open $RELEASE_TAG" \
             --generate-notes "${EXTRA_FLAGS[@]}" \
-            --notes 'Android APK and universal macOS app (Apple Silicon + Intel, macOS 13+). Mac app is ad-hoc signed, not Apple-notarized. Android release APKs use a stable private release key; earlier locally signed debug builds may need profile export and replacement. Hardware calibration and firmware compatibility still require testing on your own XShifter. No vendor firmware images are included.' \
-            ./*.apk ./*.zip SHA256SUMS
+            --notes 'Download the Android APK or universal Mac DMG/ZIP below. The quick guide and guide-and-screenshots bundle are also attached. See the repository README for a screenshot gallery. Mac supports Apple Silicon and Intel on macOS 13+; it is ad-hoc signed, not Apple-notarized. Android release APKs use a stable private release key; export profiles before replacing older locally signed debug builds. Hardware calibration and firmware compatibility still require testing on your own XShifter. No vendor firmware images are included.' \
+            ./*.apk ./*.zip ./*.dmg ./*.md SHA256SUMS

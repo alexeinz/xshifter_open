@@ -14,3 +14,4 @@ local.properties
 .codex/
 .idea/
 outputs/
+dist/

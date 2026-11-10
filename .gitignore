@@ -1,0 +1,16 @@
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+.DS_Store
+.env
+.env.*
+*.p12
+*.mobileprovision
+*.pem
+.contextstream/
+.agents/
+.codex/
+.idea/
+outputs/

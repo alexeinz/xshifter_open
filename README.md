@@ -6,14 +6,14 @@ Native **Android and macOS** companion apps for XShifter E-Link: read your setup
 
 This is an independent, experimental project. Device commands were recovered from the original Android app; live Bluetooth, motor behaviour and power-cycle persistence still need validation on your hardware. Manufacturer names describe mechanical components, not factory-calibrated motor positions.
 
-## Install v0.4.1
+## Install v0.4.2
 
 | Platform | Download | Requirements |
 |---|---|---|
-| Android | [Signed APK](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.1/XShifter-Open-0.4.1.apk) | Android 8.0+; Bluetooth LE |
-| macOS | [DMG installer](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.1/XShifter-Open-0.4.1-macOS-universal.dmg) · [App ZIP](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.1/XShifter-Open-0.4.1-macOS-universal.zip) | macOS 13+; Apple Silicon or Intel |
+| Android | [Signed APK](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.2/XShifter-Open-0.4.2.apk) | Android 8.0+; Bluetooth LE |
+| macOS | [DMG installer](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.2/XShifter-Open-0.4.2-macOS-universal.dmg) · [App ZIP](https://github.com/alexeinz/xshifter_open/releases/download/v0.4.2/XShifter-Open-0.4.2-macOS-universal.zip) | macOS 13+; Apple Silicon or Intel |
 
-[Release notes and SHA-256 checksums](https://github.com/alexeinz/xshifter_open/releases/tag/v0.4.1). The Mac app is ad-hoc signed and **not Apple-notarized**. The Android release certificate differs from earlier local debug builds: export profiles before uninstalling the old app and installing this release.
+[Release notes and SHA-256 checksums](https://github.com/alexeinz/xshifter_open/releases/tag/v0.4.2). The Mac app is ad-hoc signed and **not Apple-notarized**. The Android release certificate differs from earlier local debug builds: export profiles before uninstalling the old app and installing this release. New debug builds install separately as **XShifter Open Debug**. Public release upgrades keep the same certificate and preserve app data.
 
 ## Desktop calibration
 

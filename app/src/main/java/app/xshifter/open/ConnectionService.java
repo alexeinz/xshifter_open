@@ -16,6 +16,7 @@ public final class ConnectionService extends Service implements BleLink.Listener
 
   public interface UiListener extends BleLink.Listener {
     void batteryChanged();
+
     void deviceInfoChanged();
   }
 
@@ -27,6 +28,7 @@ public final class ConnectionService extends Service implements BleLink.Listener
 
   private final LocalBinder binder = new LocalBinder();
   private final Handler handler = new Handler(Looper.getMainLooper());
+  private final LoginHandshake login = new LoginHandshake();
   private BleLink transport;
   private UiListener ui;
   private BatteryNotifications notifications;
@@ -39,8 +41,13 @@ public final class ConnectionService extends Service implements BleLink.Listener
   private boolean firmwarePending;
   private final Runnable firmwareRetry = this::retryFirmware;
 
-  String firmware() { return firmware; }
-  BatteryTrend.Result batteryTrend() { return trend.result(SystemClock.elapsedRealtime()); }
+  String firmware() {
+    return firmware;
+  }
+
+  BatteryTrend.Result batteryTrend() {
+    return trend.result(SystemClock.elapsedRealtime());
+  }
 
   void requestFirmware() {
     if (!authenticated || !transport.isReady())
@@ -70,16 +77,56 @@ public final class ConnectionService extends Service implements BleLink.Listener
     }
     if (ui != null) ui.deviceInfoChanged();
   }
+
   private String address = "", status = "Offline · profiles and demo available", lastSummary = "";
   private byte[] identity;
   private boolean authenticated, monitoring;
-  private final Runnable loginTimeout =
+  private final Runnable loginTimeout = this::tryLogin;
+  private final Runnable backgroundTimeout =
       () -> {
-        if (!authenticated) {
+        if (ui == null && !monitoring) {
           transport.close();
-          status("Login response not received. Wake the device and close the original app.");
+          status(
+              "Disconnected after 30 seconds away · enable Battery notifications for longer"
+                  + " monitoring");
         }
       };
+
+  private void tryLogin() {
+    if (authenticated || !transport.isReady()) return;
+    LoginHandshake.Action action = login.next(SystemClock.elapsedRealtime(), transport.isIdle());
+    if (action == LoginHandshake.Action.FAIL) {
+      int attempts = login.attempts();
+      transport.close();
+      status(
+          "No login reply after "
+              + attempts
+              + " attempts. Wake the E-Link, close other XShifter apps and reconnect.");
+      return;
+    }
+    if (action == LoginHandshake.Action.SEND) {
+      try {
+        transport.send(Protocol.login(identity));
+        status("Connected · identification attempt " + login.attempts() + " of 3");
+      } catch (RuntimeException e) {
+        transport.close();
+        status("Identification failed: " + e.getMessage());
+        return;
+      }
+    }
+    handler.postDelayed(loginTimeout, 250);
+  }
+
+  void leaveForeground(boolean unsafeTransaction) {
+    ConnectionPolicy.Background decision =
+        ConnectionPolicy.background(
+            authenticated, unsafeTransaction, transport.hasOnlyReadOperations(), monitoring);
+    handler.removeCallbacks(backgroundTimeout);
+    if (decision == ConnectionPolicy.Background.DISCONNECT) disconnect();
+    else if (decision == ConnectionPolicy.Background.SHORT_GRACE)
+      handler.postDelayed(backgroundTimeout, 30_000);
+  }
+
   private final Runnable tick =
       new Runnable() {
         @Override
@@ -130,6 +177,7 @@ public final class ConnectionService extends Service implements BleLink.Listener
   }
 
   void attach(UiListener listener) {
+    handler.removeCallbacks(backgroundTimeout);
     ui = listener;
     transport.setReadOnly(false);
     ui.status(status);
@@ -259,15 +307,16 @@ public final class ConnectionService extends Service implements BleLink.Listener
       transport.close();
       return;
     }
-    transport.send(Protocol.login(identity));
-    status("Connected · identifying app");
-    handler.postDelayed(loginTimeout, 10000);
+    handler.removeCallbacks(loginTimeout);
+    login.start(SystemClock.elapsedRealtime());
+    tryLogin();
     if (ui != null) ui.ready();
   }
 
   @Override
   public void packet(byte[] data) {
-    if (data.length == 18 && Protocol.u(data[0]) == 0xdf && Protocol.u(data[1]) == 0x89) {
+    if (LoginHandshake.isReply(data)) {
+      if (!login.accept(data)) return;
       authenticated = true;
       handler.removeCallbacks(loginTimeout);
       status("XShifter connected");
@@ -311,6 +360,8 @@ public final class ConnectionService extends Service implements BleLink.Listener
   public void disconnected() {
     boolean lost = monitoring && authenticated;
     authenticated = false;
+    login.reset();
+    handler.removeCallbacks(backgroundTimeout);
     firmwarePending = false;
     handler.removeCallbacks(firmwareRetry);
     trend.clear();

@@ -6,7 +6,7 @@ Android and macOS test releases · [Downloads](https://github.com/alexeinz/xshif
 
 **Android (8.0+):** download `XShifter-Open-<version>.apk` from this repository's Releases page and open it. Android may ask you to allow installation from the browser or file manager you used. Permission wording varies by device. See [Android's installation guidance](https://developer.android.com/distribute/marketing-tools/alternative-distribution).
 
-If you installed one of the earlier local **debug APKs**, first export your profiles. The public release uses a different signing certificate, so Android will require you to uninstall the debug app before installing the release. Uninstalling removes the app's local profiles, identity and backups. Import your exported profiles afterwards. Later public releases use the same private release key.
+If you installed one of the earlier local **debug APKs**, first export your profiles. The public release uses a different signing certificate, so Android will require you to uninstall the debug app before installing the release. Uninstalling removes the app's local profiles, identity and backups. Import your exported profiles afterwards. Later public releases use the same private release key and can update the installed release in place. Starting with 0.4.2, new debug builds use a separate package and the **XShifter Open Debug** label; they are not updates for the release app.
 
 **Mac (macOS 13+, Intel or Apple Silicon):** download and open `XShifter-Open-<version>-macOS-universal.dmg`, then drag **XShifter Open.app** to **Applications**. Alternatively, unzip the app ZIP and move the app to Applications. The app is ad-hoc signed, not Apple-notarized. If macOS blocks it, review [Apple's guidance for opening apps safely](https://support.apple.com/en-us/102445); any exception is your choice. Do not disable Gatekeeper globally.
 
@@ -48,7 +48,7 @@ Live table upload supports **3–17 gears**. A SRAM/Shimano model or tooth list 
 
 Both apps show E-Link voltage and a **~percentage estimate** derived from the original app's voltage thresholds. Unknown, stale and Demo data are labelled. No capacity or battery-health measurement is available.
 
-Android **Device → Battery notifications** opts in for the current connection. Allow notification permission when requested. Low warning defaults to ~20% (adjustable); critical warning is ~10%. Monitoring can continue while the phone is locked if Bluetooth stays connected. Disconnecting stops alerts. **Send test notification** verifies delivery without a live warning.
+Android **Device → Battery notifications** opts in for the current connection. Allow notification permission when requested. Low warning defaults to ~20% (adjustable); critical warning is ~10%. Monitoring can continue while the phone is locked if Bluetooth stays connected. Pending read-only requests no longer cancel monitoring. A normal app switch without monitoring can retain an authenticated, read-only connection for up to 30 seconds; switching away during a device-changing operation still disconnects. Disconnecting stops alerts. **Send test notification** verifies delivery without a live warning.
 
 Android's session trend needs at least ten minutes of continuous readings. A sustained voltage drop may flag possible fast drain; motor load, temperature and charge also affect voltage. It is not a health diagnosis or remaining-runtime forecast. Demo/stale data never trigger live battery warnings. These notification/trend features are not included in the initial Mac app.
 
@@ -59,7 +59,7 @@ Use **Read firmware version** to request the E-Link version. Legacy replies are 
 - **No device:** wake it, check Bluetooth permission, and close competing apps. The original unit may allow only one active connection.
 - **No complete table / timeout:** reconnect and read again. Do not apply another table to hide an unverified result.
 - **Readback differs:** stop calibration and compare against your saved backup before continuing.
-- **Version unavailable:** retry the separate version read and inspect the session log. No version is inferred from an app or cassette model.
+- **Version unavailable:** retry the separate version read and inspect the session log. No version is inferred from an app or cassette model. **Device → Copy session log** copies connection-stage messages for troubleshooting; review device identifiers before sharing.
 - **No Android alert:** check the in-app monitoring switch, Android notification settings, and connection state. Try the test notification.
 
 When reporting an issue, include the app version, platform, whether Demo mode reproduces it, and the relevant session-log messages. Remove device identifiers or other details you do not want to publish.

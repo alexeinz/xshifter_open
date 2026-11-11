@@ -33,10 +33,11 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
   private boolean wide, compact;
   private int lastRenderedTab = -1;
   private boolean telemetryRenderPending;
-  private final Runnable telemetryRender = () -> {
-    telemetryRenderPending = false;
-    if (this.visible && this.tab != 2) render();
-  };
+  private final Runnable telemetryRender =
+      () -> {
+        telemetryRenderPending = false;
+        if (this.visible && this.tab != 2) render();
+      };
   private LinearLayout cardRow;
   private int cardColumn;
   private final Map<String, String> formValues = new HashMap<>();
@@ -92,9 +93,7 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
   private int[] livePositions;
   private boolean authenticated, bench, uploading, awaitingTable, demo;
   private long lastTelemetry;
-  private String address = "",
-      peer = "—",
-      status = "Offline · profiles and demo available";
+  private String address = "", peer = "—", status = "Offline · profiles and demo available";
   private Protocol.TableReader reader = new Protocol.TableReader();
   private final LinkedHashMap<String, BluetoothDevice> foundDevices = new LinkedHashMap<>();
   private final ArrayList<String> log = new ArrayList<>();
@@ -505,15 +504,17 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
       main.addView(nav, lp);
     }
     setContentView(root);
-    scroll.getViewTreeObserver().addOnPreDrawListener(
-        new android.view.ViewTreeObserver.OnPreDrawListener() {
-          @Override
-          public boolean onPreDraw() {
-            scroll.getViewTreeObserver().removeOnPreDrawListener(this);
-            scroll.scrollTo(0, restoreScroll);
-            return true;
-          }
-        });
+    scroll
+        .getViewTreeObserver()
+        .addOnPreDrawListener(
+            new android.view.ViewTreeObserver.OnPreDrawListener() {
+              @Override
+              public boolean onPreDraw() {
+                scroll.getViewTreeObserver().removeOnPreDrawListener(this);
+                scroll.scrollTo(0, restoreScroll);
+                return true;
+              }
+            });
     if (lastRenderedTab != tab && android.animation.ValueAnimator.areAnimatorsEnabled()) {
       body.setAlpha(0);
       body.setTranslationY(dp(8));
@@ -1013,11 +1014,18 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
     c.addView(firmwareText);
     deviceInfoChanged();
     c.addView(text("Pod / peer: " + peer, 14, MUTED));
-    button(c, "Read firmware version", () -> {
-      if (demo) { message("Live device required", "Connect to your XShifter to read its firmware version."); return; }
-      if (connectionService == null) throw new IllegalStateException("Connect first");
-      connectionService.requestFirmware();
-    });
+    button(
+        c,
+        "Read firmware version",
+        () -> {
+          if (demo) {
+            message(
+                "Live device required", "Connect to your XShifter to read its firmware version.");
+            return;
+          }
+          if (connectionService == null) throw new IllegalStateException("Connect first");
+          connectionService.requestFirmware();
+        });
     action(c, "Find my XShifter", this::scan);
     button(c, "Read device state", this::refresh);
     button(
@@ -1093,9 +1101,9 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
                 + "Save tuning / custom table upload / profile backup\n"
                 + "Battery voltage / estimated level / low and critical alerts\n"
                 + "Session voltage trend / possible fast-drain warning\n\n"
-                + "Useful next additions: guided per-gear calibration, backup comparison and restore,"
-                + " shift-response diagnostics, and exportable ride/battery history. These can use"
-                + " existing commands; motor behaviour still needs device testing.\n\n"
+                + "Useful next additions: guided per-gear calibration, backup comparison and"
+                + " restore, shift-response diagnostics, and exportable ride/battery history. These"
+                + " can use existing commands; motor behaviour still needs device testing.\n\n"
                 + "Firmware flashing is deferred until compatible firmware and device validation"
                 + " are available. Pod button remapping, motor speed/force adjustment and"
                 + " bike-computer gear broadcasting are not confirmed by the recovered protocol.",
@@ -1121,6 +1129,24 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
               });
         });
     LinearLayout diagnostics = card("Session log");
+    button(
+        diagnostics,
+        "Copy session log",
+        () -> {
+          android.content.ClipboardManager clipboard =
+              getSystemService(android.content.ClipboardManager.class);
+          clipboard.setPrimaryClip(
+              ClipData.newPlainText(
+                  "XShifter session log",
+                  getPackageName()
+                      + " · Android API "
+                      + Build.VERSION.SDK_INT
+                      + "\n"
+                      + "Contains device identifiers; review before sharing. Battery frames"
+                      + " omitted.\n"
+                      + String.join("\n", log)));
+          status("Session log copied · review device identifiers before sharing");
+        });
     for (String s : log) diagnostics.addView(text(s, 11, MUTED));
   }
 
@@ -1198,9 +1224,13 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
 
   @Override
   public void deviceInfoChanged() {
-    if (firmwareText != null) firmwareText.setText("E-Link firmware: "
-        + (demo ? "Unavailable in demo" : connectionService == null ? "Not connected" : connectionService.firmware())
-        + (!demo && !authenticated ? " · disconnected" : ""));
+    if (firmwareText != null)
+      firmwareText.setText(
+          "E-Link firmware: "
+              + (demo
+                  ? "Unavailable in demo"
+                  : connectionService == null ? "Not connected" : connectionService.firmware())
+              + (!demo && !authenticated ? " · disconnected" : ""));
   }
 
   @Override
@@ -1233,12 +1263,28 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
     if (batteryMonitorSwitch != null)
       batteryMonitorSwitch.setChecked(connectionService != null && connectionService.monitoring());
     if (batteryTrendText != null) {
-      BatteryTrend.Result trend = connectionService == null || demo ? null : connectionService.batteryTrend();
-      String trendText = demo ? "Trend unavailable in demo" : !authenticated ? "Connect to collect a battery trend"
-          : trend == null || !trend.ready() ? "Collecting voltage trend · needs 10 minutes of continuous readings"
-          : String.format(Locale.ROOT, "%s · %+.2f V over %.0f minutes",
-              trend.fastDrop() ? "Possible fast drain" : "Voltage trend", -trend.dropVolts(), trend.minutes());
-      batteryTrendText.setText(trendText + "\nSession only. A sustained drop of at least 0.20 V in a 10–16 minute window flags possible drain. Load, temperature and charge can affect voltage; capacity and battery health are not measured. Alerts use Battery notifications and are limited to one per connection.");
+      BatteryTrend.Result trend =
+          connectionService == null || demo ? null : connectionService.batteryTrend();
+      String trendText =
+          demo
+              ? "Trend unavailable in demo"
+              : !authenticated
+                  ? "Connect to collect a battery trend"
+                  : trend == null || !trend.ready()
+                      ? "Collecting voltage trend · needs 10 minutes of continuous readings"
+                      : String.format(
+                          Locale.ROOT,
+                          "%s · %+.2f V over %.0f minutes",
+                          trend.fastDrop() ? "Possible fast drain" : "Voltage trend",
+                          -trend.dropVolts(),
+                          trend.minutes());
+      batteryTrendText.setText(
+          trendText
+              + "\n"
+              + "Session only. A sustained drop of at least 0.20 V in a 10–16 minute window flags"
+              + " possible drain. Load, temperature and charge can affect voltage; capacity and"
+              + " battery health are not measured. Alerts use Battery notifications and are limited"
+              + " to one per connection.");
       batteryTrendText.setTextColor(trend != null && trend.fastDrop() ? 0xffffa18b : MUTED);
     }
   }
@@ -1389,6 +1435,23 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
         requestPermissions(permissions, 7);
         return;
       }
+    if (Build.VERSION.SDK_INT < 31) {
+      android.location.LocationManager location =
+          getSystemService(android.location.LocationManager.class);
+      boolean enabled =
+          Build.VERSION.SDK_INT >= 28
+              ? location.isLocationEnabled()
+              : android.provider.Settings.Secure.getInt(
+                      getContentResolver(), android.provider.Settings.Secure.LOCATION_MODE, 0)
+                  != 0;
+      if (!enabled) {
+        message(
+            "Location setting needed for Bluetooth scan",
+            "This Android version requires the system Location setting to be on for BLE discovery."
+                + " Turn it on in Settings, then search again.");
+        return;
+      }
+    }
     foundDevices.clear();
     scanAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, new ArrayList<>());
     scanList = new ListView(this);
@@ -1428,6 +1491,10 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
       return;
     }
     if (code == 7) {
+      if (grants.length == 0) {
+        status("Bluetooth permission request cancelled · tap Find my XShifter to retry");
+        return;
+      }
       for (int g : grants)
         if (g != PackageManager.PERMISSION_GRANTED) {
           message(
@@ -1490,16 +1557,16 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
 
   private void record(String s) {
     log.add(0, java.time.LocalTime.now().withNano(0) + "  " + s);
-    while (log.size() > 35) log.remove(log.size() - 1);
+    while (log.size() > 120) log.remove(log.size() - 1);
   }
 
   @Override
   public void packet(byte[] b) {
-    record("RX " + Protocol.hex(b));
     if (b.length >= 3 && b[0] == 1 && b[1] == 1 && b[2] == 1) {
       batteryChanged();
       return;
     }
+    record("RX " + Protocol.hex(b));
     int previousGear = liveGear;
     int previousPosition = position;
     int previousAdjustment = adjustment;
@@ -1924,18 +1991,12 @@ public final class MainActivity extends Activity implements ConnectionService.Ui
     visible = false;
     handler.removeCallbacksAndMessages(null);
     transaction++;
-    boolean keepMonitoring =
-        !demo
-            && connectionService != null
-            && connectionService.monitoring()
-            && authenticated
-            && !uploading
-            && expected == null
-            && link != null
-            && link.isIdle();
-    if (!demo && !keepMonitoring && connectionService != null) connectionService.disconnect();
     if (link != null) link.stopScan();
-    if (connectionService != null) connectionService.detach(this);
+    if (connectionService != null) {
+      boolean unsafeTransaction = uploading || expected != null;
+      connectionService.detach(this);
+      if (!demo) connectionService.leaveForeground(unsafeTransaction);
+    }
     awaitingTable = false;
     bench = false;
   }
